@@ -22,6 +22,19 @@ make test
 Docker'а на ноутбуке нет? Тогда локально работают тесты и линтер
 (`composer install && make test`), а форму для упражнения 1.6.3 ведущий даст на стенде — скажите ему.
 
+## Как проверить, что сервис жив
+
+```bash
+make up              # docker compose up -d --build; backend ждёт healthcheck БД
+make ps              # контейнеры backend и db должны быть Up/healthy
+curl -s http://localhost:8080/health
+# {"status":"ok","service":"carmoney-lab"}
+```
+
+Если `make up` зависает или сервис не отвечает — смотри `make logs` (бэкенд)
+или `docker compose logs db` (база). Порт задаётся переменной `APP_PORT`,
+по умолчанию `8080`; healthcheck БД в `docker-compose.yml` — `mysqladmin ping`.
+
 | Команда | Что делает |
 |---|---|
 | `make up` | поднять сервис и базу |
