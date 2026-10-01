@@ -15,13 +15,13 @@ final class DecisionEngineTest extends TestCase
     protected function setUp(): void
     {
         $rules = require __DIR__ . '/../../backend/config/rules.php';
-        $this->engine = new DecisionEngine($rules['ltv']);
+        $this->engine = new DecisionEngine($rules['ltv'], $rules['vehicle']['review_mileage_threshold_km']);
     }
 
     #[DataProvider('ltvValues')]
     public function testDecidesByLtv(float $ltv, string $expected): void
     {
-        self::assertSame($expected, $this->engine->decide($ltv));
+        self::assertSame($expected, $this->engine->decide($ltv, 0));
     }
 
     /** @return array<string,array{float,string}> */
