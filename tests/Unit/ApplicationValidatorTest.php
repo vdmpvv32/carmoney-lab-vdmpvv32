@@ -8,6 +8,7 @@ use CarMoneyLab\Domain\ApplicationValidator;
 use CarMoneyLab\Domain\ValidationException;
 use CarMoneyLab\Domain\VehicleAge;
 use CarMoneyLab\Domain\VinValidator;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class ApplicationValidatorTest extends TestCase
@@ -61,6 +62,80 @@ final class ApplicationValidatorTest extends TestCase
         } catch (ValidationException $exception) {
             self::assertArrayHasKey('requested_amount', $exception->errors());
         }
+    }
+
+    public function testRejectsNullMileage(): void
+    {
+        try {
+            $this->validator->validate($this->validPayload(['mileage' => null]));
+            self::fail('Ожидали ValidationException');
+        } catch (ValidationException $exception) {
+            self::assertArrayHasKey('mileage', $exception->errors());
+        }
+    }
+
+    public function testRejectsMissingMileageField(): void
+    {
+        $payload = $this->validPayload();
+        unset($payload['mileage']);
+
+        try {
+            $this->validator->validate($payload);
+            self::fail('Ожидали ValidationException');
+        } catch (ValidationException $exception) {
+            self::assertArrayHasKey('mileage', $exception->errors());
+        }
+    }
+
+    public function testRejectsEmptyStringMileage(): void
+    {
+        try {
+            $this->validator->validate($this->validPayload(['mileage' => '']));
+            self::fail('Ожидали ValidationException');
+        } catch (ValidationException $exception) {
+            self::assertArrayHasKey('mileage', $exception->errors());
+        }
+    }
+
+    public function testAcceptsMaximumMileage(): void
+    {
+        $result = $this->validator->validate($this->validPayload(['mileage' => 500000]));
+
+        self::assertSame(500000, $result['mileage']);
+    }
+
+    public function testRejectsMileageAboveMaximum(): void
+    {
+        try {
+            $this->validator->validate($this->validPayload(['mileage' => 500001]));
+            self::fail('Ожидали ValidationException');
+        } catch (ValidationException $exception) {
+            self::assertArrayHasKey('mileage', $exception->errors());
+        }
+    }
+
+    #[DataProvider('unchangedValidationRules')]
+    public function testKeepsExistingValidationRules(string $field, mixed $value): void
+    {
+        try {
+            $this->validator->validate($this->validPayload([$field => $value]));
+            self::fail('Ожидали ValidationException');
+        } catch (ValidationException $exception) {
+            self::assertArrayHasKey($field, $exception->errors());
+        }
+    }
+
+    /** @return array<string,array{string,mixed}> */
+    public static function unchangedValidationRules(): array
+    {
+        return [
+            'некорректный VIN' => ['vin', 'BAD'],
+            'год раньше минимального' => ['year', 1989],
+            'год в будущем' => ['year', (int) date('Y') + 1],
+            'стоимость равна нулю' => ['market_value', 0],
+            'сумма ниже минимальной' => ['requested_amount', 49999],
+            'срок больше максимального' => ['term_months', 49],
+        ];
     }
 
     public function testCollectsAllErrorsAtOnce(): void
