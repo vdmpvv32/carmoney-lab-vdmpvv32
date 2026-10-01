@@ -41,7 +41,13 @@ final class ApplicationValidator
         }
 
         $mileage = (int) ($payload['mileage'] ?? -1);
-        if ($mileage < 0 || $mileage > $this->rules['vehicle']['max_mileage_km']) {
+        if (
+            !array_key_exists('mileage', $payload)
+            || $payload['mileage'] === null
+            || $payload['mileage'] === ''
+            || $mileage < 0
+            || $mileage > $this->rules['vehicle']['max_mileage_km']
+        ) {
             $errors['mileage'] = sprintf('Пробег от 0 до %d км', $this->rules['vehicle']['max_mileage_km']);
         }
 
